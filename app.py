@@ -6,7 +6,7 @@ from datetime import datetime
 
 # --- GOOGLE SHEETS CONNECTION ---
 # Replace this with your actual Google Sheet URL
-SQL_URL = "https://docs.google.com/spreadsheets/d/your-id-here/edit#gid=0"
+SQL_URL = "https://docs.google.com/spreadsheets/d/1JbUjQvjlqxF5RwHN9ZFZdpAR5zKP9vbgSm9JBeZc9Ow/edit?usp=sharing"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -31,10 +31,22 @@ def password_entered():
 if check_password():
     st.title("☁️ Cloud Connected Finance Tracker")
 
-    # Load data from Google Sheets
-    data = conn.read(spreadsheet=SQL_URL, usecols=[0, 1, 2], ttl=5)
-    data = data.dropna(how="all")
+    # --- LOADING DATA WITH ERROR HANDLING ---
+    try:
+        # Line 35: This is the critical connection point
+        data = conn.read(spreadsheet=SQL_URL, usecols=[0, 1, 2], ttl=5)
+        data = data.dropna(how="all")
+    except Exception as e:
+        st.error("⚠️ Connection to Google Sheets Failed")
+        st.info(f"**Technical Detail:** {e}")
+        st.write("---")
+        st.write("### How to fix this:")
+        st.write("1. **Check your URL:** Ensure `SQL_URL` at the top of your script is a valid link.")
+        st.write("2. **Check Permissions:** Open your Google Sheet, click **Share**, and set it to **'Anyone with the link'** as **'Editor'**.")
+        st.write("3. **Check Secrets:** Ensure your Streamlit Cloud Secrets are configured correctly.")
+        st.stop() # Prevents the rest of the app from crashing
 
+    # --- APP LAYOUT (Only runs if connection is successful) ---
     col_form, col_chart = st.columns(2)
 
     with col_form:
@@ -49,13 +61,17 @@ if check_password():
                 updated_df = pd.concat([data, new_row], ignore_index=True)
 
                 # Update Google Sheets
-                conn.update(spreadsheet=SQL_URL, data=updated_df)
-                st.success("Sent to Google Sheets!")
-                st.rerun()
+                try:
+                    conn.update(spreadsheet=SQL_URL, data=updated_df)
+                    st.success("Sent to Google Sheets!")
+                    st.rerun()
+                except Exception as update_error:
+                    st.error(f"Could not update sheet: {update_error}")
 
     # --- VISUALS ---
     if not data.empty:
         with col_chart:
+            # Ensure column names match your sheet exactly
             fig = px.pie(data, values='Amount', names='Category', hole=0.3)
             st.plotly_chart(fig, use_container_width=True)
 
