@@ -6,7 +6,7 @@ from datetime import datetime
 
 # --- GOOGLE SHEETS CONNECTION ---
 # Replace this with your actual Google Sheet URL
-SQL_URL = "SQL_URL = "https://docs.google.com/spreadsheets/d/1JbUjQvjlqxF5RwHN9ZFZdpAR5zKP9vbgSm9JBeZc9Ow/"
+SQL_URL = "https://docs.google.com/spreadsheets/d/1JbUjQvjlqxF5RwHN9ZFZdpAR5zKP9vbgSm9JBeZc9Ow/"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -79,6 +79,7 @@ if check_password():
         st.dataframe(data, use_container_width=True)
     else:
         st.info("No data in Google Sheets yet.")
+
 
 
 
